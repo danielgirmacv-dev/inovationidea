@@ -1,0 +1,28 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('idea_attachments', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('idea_submission_id')->constrained('idea_submissions')->cascadeOnDelete();
+            $table->string('original_name');
+            $table->string('file_path');
+            $table->string('file_type')->nullable(); // pdf, doc, jpg, etc.
+            $table->string('mime_type')->nullable();
+            $table->unsignedBigInteger('file_size')->nullable(); // bytes
+            $table->string('disk')->default('local');
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('idea_attachments');
+    }
+};

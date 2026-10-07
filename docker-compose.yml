@@ -1,0 +1,59 @@
+services:
+
+  # ─── Laravel Application ────────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: innovation-app
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Override .env DB settings to point to the Docker mysql service
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: inovate
+      DB_USERNAME: inovate
+      DB_PASSWORD: inovate_password
+      # Ensure correct APP_URL for container
+      APP_URL: http://localhost:8000
+      # Session & cache via file (works out of the box)
+      SESSION_DRIVER: file
+      CACHE_STORE: file
+    ports:
+      - "8000:8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      # Persist storage (logs, sessions, uploads) across container restarts
+      - innovation_storage:/var/www/storage
+      - innovation_bootstrap:/var/www/bootstrap/cache
+
+  # ─── MySQL Database ─────────────────────────────────────────────────────────
+  mysql:
+    image: mysql:8.4
+    container_name: innovation-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: inovate
+      MYSQL_USER: inovate
+      MYSQL_PASSWORD: inovate_password
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      # Exposed on 3307 to avoid conflicts with local MySQL on 3306
+      - "3307:3306"
+    volumes:
+      - innovation_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+
+volumes:
+  innovation_mysql_data:
+  innovation_storage:
+  innovation_bootstrap:

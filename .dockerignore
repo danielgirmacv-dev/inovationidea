@@ -1,0 +1,41 @@
+# --- Dependencies ---
+/vendor/
+/node_modules/
+
+# --- Local environment ---
+.env.backup
+.env.testing
+
+# --- Build artifacts to INCLUDE (public/build is needed) ---
+# Do NOT ignore public/build — the container needs the compiled CSS/JS
+
+# --- Version control ---
+.git
+.gitignore
+.gitattributes
+
+# --- IDE & Editor files ---
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# --- OS files ---
+.DS_Store
+Thumbs.db
+
+# --- Test & Development only ---
+tests/
+phpunit.xml
+.phpunit.cache/
+
+# --- Documentation ---
+*.md
+README*
+
+# --- CI/CD ---
+.github/
+.gitlab-ci.yml
+
+# --- Local Docker override files ---
+docker-compose.override.yml

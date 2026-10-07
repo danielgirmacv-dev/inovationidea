@@ -1,0 +1,85 @@
+name: CI/CD
+
+on:
+    push:
+        branches: ['main']
+    pull_request:
+        branches: ['main']
+
+jobs:
+    test:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '8.3'
+                  extensions: mbstring, bcmath, pcntl, zip, gd, exif, pdo_mysql
+                  coverage: none
+
+            - name: Install Composer dependencies
+              run: composer install --no-interaction --prefer-dist --no-progress
+
+            - name: Install Node dependencies
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '20'
+                  cache: 'npm'
+              run: npm install --ignore-scripts
+
+            - name: Run tests
+              run: vendor/bin/phpunit --testdox --colors=always
+
+            - name: Run Pint (code style)
+              run: vendor/bin/pint --test
+
+            - name: Build frontend assets
+              run: npm run build
+
+    deploy:
+        needs: test
+        runs-on: ubuntu-latest
+        if: github.ref == 'refs/heads/main'
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '8.3'
+                  extensions: mbstring, bcmath, pcntl, zip, gd, exif, pdo_mysql
+
+            - name: Install Composer dependencies
+              run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --no-progress
+
+            - name: Install Node dependencies and build
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '20'
+                  cache: 'npm'
+              run: npm install --ignore-scripts && npm run build
+
+            - name: Deploy to cPanel via SSH
+              uses: appleboy/ssh-action@v1.0.3
+              with:
+                  host: ${{ secrets.CPANEL_SSH_HOST }}
+                  username: ${{ secrets.CPANEL_SSH_USERNAME }}
+                  key: ${{ secrets.CPANEL_SSH_PRIVATE_KEY }}
+                  port: ${{ secrets.CPANEL_SSH_PORT || 22 }}
+                  script: |
+                      cd ${{ secrets.CPANEL_DEPLOY_PATH }}
+                      git pull origin main
+                      composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+                      npm install --ignore-scripts
+                      npm run build
+                      php artisan migrate --force
+                      php artisan config:cache
+                      php artisan route:cache
+                      php artisan view:cache
+                      echo "Deployment completed successfully."
