@@ -71,7 +71,7 @@ jobs:
                   host: ${{ secrets.CPANEL_SSH_HOST }}
                   username: ${{ secrets.CPANEL_SSH_USERNAME }}
                   key: ${{ secrets.CPANEL_SSH_PRIVATE_KEY }}
-                  port: ${{ secrets.CPANEL_SSH_PORT || 22 }}
+                  port: 22
                   script: |
                       cd ${{ secrets.CPANEL_DEPLOY_PATH }}
                       git pull origin main
